@@ -4,11 +4,44 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>UAT, Untangled</title>
+    <link rel="stylesheet" href="/static/css/styles.css" />
   </head>
   <body>
-    <main>
-      <h1>UAT, Untangled</h1>
-      <p>The app skeleton is running. Tester and manager workflows are coming next.</p>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <header class="site-header" id="site-header"></header>
+
+    <main id="main">
+      <h1>What did you spot?</h1>
+      <p class="lead">Pick the option closest to what you noticed. We'll ask a few questions, and none of them are exam questions.</p>
+
+      <ul class="picker">
+        <li>
+          <a class="panel panel--bug" href="/static/report.html?category=bug">
+            <span class="panel__name">Bug</span>
+            <p class="panel__desc">Something is broken or doesn't work as it should.</p>
+          </a>
+        </li>
+        <li>
+          <a class="panel panel--awkward" href="/static/report.html?category=awkward">
+            <span class="panel__name">Awkward</span>
+            <p class="panel__desc">It works, but it felt confusing or wrong.</p>
+          </a>
+        </li>
+        <li>
+          <a class="panel panel--suggestion" href="/static/report.html?category=suggestion">
+            <span class="panel__name">Suggestion</span>
+            <p class="panel__desc">An idea that would make it better.</p>
+          </a>
+        </li>
+        <li>
+          <a class="panel panel--extra" href="/static/report.html?category=extra">
+            <span class="panel__name">Extra</span>
+            <p class="panel__desc">A question, a note, or something missing.</p>
+          </a>
+        </li>
+      </ul>
     </main>
+
+    <script type="module" src="/static/js/index.js"></script>
   </body>
 </html>

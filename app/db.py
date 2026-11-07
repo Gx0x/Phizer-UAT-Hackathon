@@ -1,10 +1,13 @@
+from functools import lru_cache
+
 from supabase import Client, create_client
 
 from app.config import SUPABASE_SERVICE_KEY, SUPABASE_URL
 
 
+@lru_cache(maxsize=1)
 def get_supabase() -> Client:
-    """Create a client using the server-only Supabase service key."""
+    """Create (once) a client using the server-only Supabase service key."""
     if not SUPABASE_URL or not SUPABASE_SERVICE_KEY:
         raise RuntimeError(
             "Set SUPABASE_URL and SUPABASE_SERVICE_KEY in your project .env file."
