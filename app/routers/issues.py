@@ -22,7 +22,7 @@ def list_issues():
         result = (
             get_supabase()
             .table("issues")
-            .select("*, reports(id, answers, created_at)")
+            .select("*, reports(id, answers, created_at, follow_up_question, follow_up_answer, ai_quality)")
             .order("report_count", desc=True)
             .order("created_at", desc=True)
             .execute()

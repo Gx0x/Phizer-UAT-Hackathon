@@ -33,3 +33,15 @@ class ReportCreate(BaseModel):
 
         self.answers = cleaned
         return self
+
+
+class QualityResult(BaseModel):
+    is_clear: bool
+    missing: list[str]
+    follow_up: str | None
+    confidence: float
+    reasoning: str
+
+
+class FollowUpAnswer(BaseModel):
+    answer: str
