@@ -234,3 +234,195 @@ h2 { font-size: 1.15rem; margin: 0; }
 @media (prefers-reduced-motion: reduce) {
   * { scroll-behavior: auto !important; }
 }
+
+/* =========================================
+   Slice 4 Stage B — AI quality and follow-up
+   ========================================= */
+
+/* Tester follow-up */
+
+.follow-up {
+  margin-block: 1.5rem;
+  padding: 1.25rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.follow-up h2 {
+  margin-top: 0;
+}
+
+.follow-up__question {
+  margin-block: 0.75rem 1.25rem;
+  color: var(--ink);
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.follow-up__form {
+  display: grid;
+  gap: 1rem;
+}
+
+.follow-up__form textarea {
+  display: block;
+  width: 100%;
+  min-height: 7rem;
+  box-sizing: border-box;
+  padding: 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  resize: vertical;
+}
+
+.follow-up__form textarea:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+.follow-up__form .actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.follow-up__form button:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+.follow-up__form .status {
+  margin: 0;
+}
+
+.follow-up__form .status--error {
+  color: var(--danger);
+}
+
+.follow-up__complete {
+  margin-block: 1rem 0;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.follow-up__complete:focus {
+  outline: none;
+}
+
+/* Manager report sections */
+
+.report-details {
+  min-width: 0;
+}
+
+.report-follow-up,
+.ai-quality {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.report-follow-up__heading,
+.ai-quality__heading {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+  line-height: 1.4;
+}
+
+.report-follow-up__details,
+.ai-quality__details {
+  display: grid;
+  grid-template-columns: minmax(6rem, 9rem) minmax(0, 1fr);
+  gap: 0.5rem 1rem;
+  margin: 0;
+}
+
+.report-follow-up__details dt,
+.ai-quality__details dt {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.report-follow-up__details dd,
+.ai-quality__details dd {
+  min-width: 0;
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* AI verdict and confidence */
+
+.ai-quality__verdict {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.85rem;
+}
+
+.ai-quality__result,
+.ai-quality__confidence {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.3rem 0.65rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.ai-quality__result {
+  font-weight: 700;
+  color: var(--ink);
+  background: var(--paper);
+}
+
+.ai-quality__result--clear {
+  border-color: var(--brand);
+}
+
+.ai-quality__result--needs-detail {
+  border-color: var(--suggestion);
+}
+
+.ai-quality__confidence {
+  color: var(--muted);
+  background: var(--paper);
+}
+
+.ai-quality__unavailable {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+/* Responsive manager details */
+
+@media (max-width: 600px) {
+  .report-follow-up,
+  .ai-quality,
+  .follow-up {
+    padding: 0.85rem;
+  }
+
+  .report-follow-up__details,
+  .ai-quality__details {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.25rem;
+  }
+
+  .report-follow-up__details dd,
+  .ai-quality__details dd {
+    margin-bottom: 0.75rem;
+  }
+}
