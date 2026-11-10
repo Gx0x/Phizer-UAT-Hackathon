@@ -16,7 +16,9 @@ log = logging.getLogger("uat.ai")
 SYSTEM = """You review UAT feedback to decide if a developer could act on it.
 Return JSON ONLY with exactly these fields:
 {"is_clear": boolean, "missing": [string], "follow_up": string or null,
- "confidence": number from 0 to 1, "reasoning": string}.
+"confidence": how sure you are that your verdict (is_clear and the question you chose)
+is correct, from 0 to 1. A report that is obviously too vague should get HIGH confidence
+that it is unclear., "reasoning": string}.
 Be kind. Never blame the tester. If important information is missing, ask ONE
 specific question in plain English, answerable in one sentence, with no jargon.
 Never ask for information already provided. If clear, set follow_up to null.
