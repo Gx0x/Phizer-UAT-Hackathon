@@ -25,6 +25,9 @@ from app.services.embeddings import EmbeddingError, build_embedding_text
 
 # Small vectors keep the maths easy to read. Each vector is built so that its
 # cosine similarity to BASE is exactly the number we ask for.
+# This suite exercises the original threshold mode. The new auto-merge mode
+# is covered separately by scripts.test_consolidated.
+config.AUTO_MERGE_THRESHOLD = None
 config.EMBEDDING_DIM = 4
 config.EMBEDDING_MODEL = "test-model"
 config.DUP_POSSIBLE_THRESHOLD = 0.78

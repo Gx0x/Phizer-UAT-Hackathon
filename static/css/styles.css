@@ -519,3 +519,154 @@ h2 { font-size: 1.15rem; margin: 0; }
     margin-bottom: 0.5rem;
   }
 }
+
+/* Final detailed reports */
+.consolidated-report {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--brand);
+  border-radius: var(--radius);
+  background: var(--paper);
+  overflow-wrap: anywhere;
+}
+
+.consolidated-report__title {
+  margin: 1rem 0 0.5rem;
+  font-size: 1.15rem;
+}
+
+.consolidated-report__meta {
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.consolidated-report__summary {
+  white-space: pre-wrap;
+}
+
+.consolidated-report__section h4,
+.consolidated-report__source h4 {
+  margin: 1rem 0 0.4rem;
+  font-size: 1rem;
+}
+
+.consolidated-report__section ul {
+  padding-left: 1.5rem;
+}
+
+.consolidated-report__section li {
+  margin: 0.4rem 0;
+  white-space: pre-wrap;
+}
+
+.consolidated-report__warning {
+  padding: 0.75rem;
+  border-left: 4px solid var(--danger);
+  background: var(--surface);
+  color: var(--danger);
+}
+
+.consolidated-report__source {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.consolidated-report__actions {
+  margin-top: 1rem;
+}
+
+@media (max-width: 600px) {
+  .consolidated-report,
+  .consolidated-report__source {
+    padding: 0.75rem;
+  }
+}
+
+/* Optional occurrence time and mock CloudWatch evidence */
+.field input[type="datetime-local"] {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.occurrence-help {
+  margin: 0.4rem 0 0;
+  font-size: 0.95rem;
+  color: var(--muted);
+}
+
+.log-evidence {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  overflow-wrap: anywhere;
+}
+
+.log-evidence__meta {
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.log-evidence__list {
+  margin: 1rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.log-evidence__entry {
+  padding: 1rem 0;
+  border-top: 1px solid var(--line);
+}
+
+.log-evidence__entry h4 {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+}
+
+.log-evidence__details {
+  display: grid;
+  grid-template-columns: minmax(7rem, 11rem) minmax(0, 1fr);
+  gap: 0.35rem 1rem;
+  margin: 0;
+}
+
+.log-evidence__details dt {
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.log-evidence__details dd {
+  min-width: 0;
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.log-evidence__message {
+  margin-bottom: 0;
+  padding: 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--paper);
+  color: var(--ink);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 600px) {
+  .log-evidence {
+    padding: 0.75rem;
+  }
+
+  .log-evidence__details {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .log-evidence__details dd {
+    margin-bottom: 0.5rem;
+  }
+}

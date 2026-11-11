@@ -232,10 +232,31 @@ function renderForm(form) {
     );
   });
 
+  const supportsLogEvidence = category === 'bug' || category === 'awkward';
+  const occurredAt = supportsLogEvidence
+    ? el('input', {
+        id: 'occurred-at', name: 'occurred_at', type: 'datetime-local',
+        'aria-describedby': 'occurred-at-help',
+      })
+    : null;
+  const occurrenceField = occurredAt
+    ? el('div', { class: 'field' },
+        el('label', { for: 'occurred-at' },
+          'When did this happen?',
+          el('span', { class: 'optional' }, ' (optional)'),
+        ),
+        occurredAt,
+        el('p', { id: 'occurred-at-help', class: 'occurrence-help' },
+          'Use your local date and time. Leave blank to use the submission time.',
+        ),
+      )
+    : null;
+
   const formEl = el(
     'form',
     { class: 'form', novalidate: true },
     ...fields,
+    occurrenceField,
     submit,
     status,
   );
@@ -274,6 +295,17 @@ function renderForm(form) {
       return;
     }
 
+    let occurrenceTime = null;
+    if (occurredAt?.value) {
+      const date = new Date(occurredAt.value);
+      if (Number.isNaN(date.getTime())) {
+        setStatus('Enter a valid occurrence date and time, or leave it blank.', true);
+        occurredAt.focus();
+        return;
+      }
+      occurrenceTime = date.toISOString();
+    }
+
     submitting = true;
     submit.disabled = true;
     submit.textContent = 'Sending...';
@@ -297,6 +329,7 @@ function renderForm(form) {
           category,
           answers,
           tester_id: tester.id,
+          occurred_at: occurrenceTime,
         }),
       });
 

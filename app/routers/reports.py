@@ -8,6 +8,7 @@ from app.form_config import FORMS
 from app.models import FollowUpAnswer, ReportCreate
 from app.services.ai import check_report_quality, unavailable
 from app.services.duplicates import PlacementError, handle_new_report
+from app.services.consolidated import refresh_consolidated_report
 
 router = APIRouter(prefix="/api", tags=["reports"])
 log = logging.getLogger("uat.reports")
@@ -34,6 +35,7 @@ def create_report(payload: ReportCreate):
             title=make_title(payload.category, payload.answers),
             tester_id=tester_id,
             answers=payload.answers,
+            occurred_at=payload.occurred_at.isoformat() if payload.occurred_at else None,
         )
     except PlacementError as exc:
         log.warning("Could not save report: stage=%s", exc.stage)
@@ -69,6 +71,8 @@ def create_report(payload: ReportCreate):
         # Do not offer a question if it could not be stored.
         follow_up = None
 
+    refresh_consolidated_report(db, placement.issue_id)
+
     return {
         "report_id": placement.report_id,
         "issue_id": placement.issue_id,
@@ -87,7 +91,7 @@ def save_follow_up(report_id: str, payload: FollowUpAnswer):
     try:
         db = get_supabase()
         result = db.table("reports").select(
-            "id, follow_up_question, follow_up_answer"
+            "id, issue_id, follow_up_question, follow_up_answer"
         ).eq("id", report_id).limit(1).execute()
         if not result.data:
             raise HTTPException(status_code=404, detail="We couldn't find that report.")
@@ -106,6 +110,8 @@ def save_follow_up(report_id: str, payload: FollowUpAnswer):
     except Exception:
         log.exception("Could not save follow-up")
         raise HTTPException(status_code=502, detail="We couldn't save your answer just now. Please try again.")
+    if report.get("issue_id"):
+        refresh_consolidated_report(db, report["issue_id"])
     return {"status": "saved", "message": "Thanks, that helps."}
 
 

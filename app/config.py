@@ -55,3 +55,22 @@ if not (0.0 < DUP_POSSIBLE_THRESHOLD < DUP_LIKELY_THRESHOLD < 1.0):
         "In .env, the duplicate thresholds must satisfy "
         "0 < DUP_POSSIBLE_THRESHOLD < DUP_LIKELY_THRESHOLD < 1."
     )
+
+
+
+# Blank or absent preserves the earlier likely/possible matching rules.
+# Set AUTO_MERGE_THRESHOLD=0.70 to group scores strictly above 70%.
+_auto_merge_raw = os.getenv("AUTO_MERGE_THRESHOLD", "").strip()
+AUTO_MERGE_THRESHOLD = _env_float("AUTO_MERGE_THRESHOLD", 0.70) if _auto_merge_raw else None
+if AUTO_MERGE_THRESHOLD is not None and not (0 <= AUTO_MERGE_THRESHOLD < 1):
+    raise ValueError("AUTO_MERGE_THRESHOLD must be a number from 0 up to, but below, 1.")
+
+# Mock CloudWatch evidence. Match individual occurrence/submission time windows.
+MOCK_LOGS_PATH = PROJECT_ROOT / "app" / "data" / "logs.json"
+LOG_WINDOW_MINUTES = _env_int("LOG_WINDOW_MINUTES", 30)
+LOG_MATCH_LIMIT = _env_int("LOG_MATCH_LIMIT", 5)
+LOG_MIN_RELEVANCE = _env_float("LOG_MIN_RELEVANCE", 0.30)
+if LOG_WINDOW_MINUTES <= 0 or LOG_MATCH_LIMIT <= 0:
+    raise ValueError("LOG_WINDOW_MINUTES and LOG_MATCH_LIMIT must be positive whole numbers.")
+if not 0 <= LOG_MIN_RELEVANCE <= 1:
+    raise ValueError("LOG_MIN_RELEVANCE must be between 0 and 1.")

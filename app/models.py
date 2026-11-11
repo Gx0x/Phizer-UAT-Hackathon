@@ -1,7 +1,7 @@
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import AwareDatetime, BaseModel, Field, model_validator
 
 from app.form_config import FORMS
 
@@ -15,6 +15,7 @@ class ReportCreate(BaseModel):
     # Keys are the field keys from form_config.py. Values are free text.
     answers: dict[str, str] = Field(default_factory=dict)
     tester_id: UUID | None = None
+    occurred_at: AwareDatetime | None = None
 
     @model_validator(mode="after")
     def clean_answers(self):
@@ -45,3 +46,5 @@ class QualityResult(BaseModel):
 
 class FollowUpAnswer(BaseModel):
     answer: str
+
+

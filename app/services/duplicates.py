@@ -55,6 +55,10 @@ def classify(score: float, possible: float | None = None, likely: float | None =
 
     Thresholds are read from .env through config at call time, never hardcoded.
     """
+    auto_merge = getattr(config, "AUTO_MERGE_THRESHOLD", None)
+    if auto_merge is not None and possible is None and likely is None:
+        return "likely" if score > auto_merge else "new"
+
     possible = config.DUP_POSSIBLE_THRESHOLD if possible is None else possible
     likely = config.DUP_LIKELY_THRESHOLD if likely is None else likely
     if score >= likely:
@@ -255,7 +259,7 @@ def refresh_report_count(db, issue_id: str) -> int | None:
 
 
 def place_report(db, *, check: DuplicateResult, category: str, title: str,
-                 tester_id: str, answers: dict) -> Placement:
+                 tester_id: str, answers: dict, occurred_at: str | None = None) -> Placement:
     """Save the report according to the duplicate outcome.
 
     likely   -> attach to the existing issue, no new issue, count = real count.
@@ -272,6 +276,7 @@ def place_report(db, *, check: DuplicateResult, category: str, title: str,
             "tester_id": tester_id,
             "category": category,
             "answers": answers,
+            "occurred_at": occurred_at,
             "duplicate_check": duplicate_check,
         }
         if check.embedding is not None:
@@ -436,12 +441,13 @@ def record_match(db, *, check: DuplicateResult, placement: Placement, llm=call_l
 # The one call reports.py makes
 # --------------------------------------------------------------------------
 def handle_new_report(db, *, category: str, title: str, tester_id: str, answers: dict,
-                      embed=None, llm=None) -> Placement:
+                      embed=None, llm=None, occurred_at: str | None = None) -> Placement:
     """Check, save and record in order. Raises PlacementError only if the
     report itself could not be saved; every other failure is absorbed."""
     check = check_duplicates(db, category, answers, embed=embed)
     placement = place_report(
         db, check=check, category=category, title=title, tester_id=tester_id, answers=answers,
+        occurred_at=occurred_at,
     )
     record_match(db, check=check, placement=placement, llm=llm or call_llm)
     return placement

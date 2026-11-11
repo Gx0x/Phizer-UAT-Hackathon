@@ -1,8 +1,10 @@
 import logging
+from uuid import UUID
 
 from fastapi import APIRouter, HTTPException
 
 from app.db import get_supabase
+from app.services.consolidated import refresh_consolidated_report
 
 router = APIRouter(prefix="/api", tags=["issues"])
 log = logging.getLogger("uat.issues")
@@ -23,7 +25,7 @@ def list_issues():
             get_supabase()
             .table("issues")
             .select(
-                "*, reports(id, answers, created_at, follow_up_question, "
+                "*, reports(id, category, answers, created_at, occurred_at, follow_up_question, "
                 "follow_up_answer, ai_quality, duplicate_check, "
                 "duplicate_matches!duplicate_matches_report_id_fkey("
                 "id, confidence, reasoning, manager_decision, matched_issue_id))"
@@ -38,3 +40,19 @@ def list_issues():
     return result.data
 
 
+
+
+@router.post("/issues/{issue_id}/consolidated-report")
+def regenerate_consolidated_report(issue_id: UUID):
+    db = get_supabase()
+    try:
+        rows = db.table("issues").select("id").eq("id", str(issue_id)).execute().data
+    except Exception as exc:
+        log.warning("Could not find issue for synthesis: %s", type(exc).__name__)
+        raise HTTPException(status_code=502, detail="Could not load this issue just now.") from exc
+    if not rows:
+        raise HTTPException(status_code=404, detail="This issue could not be found.")
+    assessment = refresh_consolidated_report(db, str(issue_id), allow_single=True)
+    if assessment is None:
+        return {"status": "unavailable", "message": "A final report could not be saved. The sources may have changed. Refresh and try again."}
+    return {"status": assessment["status"], "report": assessment}

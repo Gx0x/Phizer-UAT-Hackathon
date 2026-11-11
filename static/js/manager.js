@@ -278,12 +278,207 @@ function answersList(issue, forms, lookup) {
         el('p', { class: 'issue__meta' },
           `Sent ${formatDate(report.created_at)}`,
         ),
+        report.occurred_at
+          ? el('p', { class: 'issue__meta' }, `Reported occurrence: ${formatDate(report.occurred_at)}`)
+          : null,
         reportAnswers(report, issue.category, forms),
         duplicateAssessment(report, issue, forms, lookup),
         followUpDetails(report),
         qualityAssessment(report),
       ),
     ),
+  );
+}
+
+function consolidatedIsCurrent(assessment, issue) {
+  const current = new Map((issue.reports ?? []).map((report) => [report.id, report]));
+  const sources = assessment.source_reports ?? [];
+
+  return sources.length === current.size && sources.every((source) => {
+    const report = current.get(source.id);
+    if (!report) return false;
+    const answers = report.answers ?? {};
+    const savedAnswers = source.answers ?? {};
+    return Object.keys(answers).length === Object.keys(savedAnswers).length &&
+      Object.entries(savedAnswers).every(([key, value]) => answers[key] === value) &&
+      (report.follow_up_question ?? null) === (source.follow_up_question ?? null) &&
+      (report.follow_up_answer ?? null) === (source.follow_up_answer ?? null) &&
+      (report.occurred_at ?? null) === (source.occurred_at ?? null) &&
+      (report.created_at ?? null) === (source.created_at ?? null);
+  });
+}
+
+function logEvidence(assessment, issue) {
+  if (issue.category !== 'bug' && issue.category !== 'awkward') return null;
+
+  const evidence = assessment?.log_evidence;
+  if (evidence?.status === 'skipped') return null;
+  const content = [];
+
+  if (!evidence) {
+    content.push(el('p', {},
+      'Generate or refresh the final report to search for supporting logs.',
+    ));
+  } else if (evidence.status !== 'ok') {
+    content.push(el('p', { role: 'status' },
+      evidence.message || 'Log evidence unavailable. Try refreshing the final report.',
+    ));
+  } else {
+    content.push(el('p', { class: 'log-evidence__meta' },
+      `Mock CloudWatch events searched within ${evidence.window_minutes} minutes before or after each report's occurrence time, or submission time when blank.`,
+    ));
+    if (evidence.session_start && evidence.session_end) {
+      content.push(el('p', { class: 'log-evidence__meta' },
+        `Mock session: ${formatDate(evidence.session_start)} to ${formatDate(evidence.session_end)}.`,
+      ));
+    }
+    if (!consolidatedIsCurrent(assessment, issue)) {
+      content.push(el('p', { class: 'consolidated-report__warning' },
+        'Evidence belongs to an earlier source version. Refresh the final report.',
+      ));
+    }
+    if (!evidence.matches?.length) {
+      content.push(el('p', {}, 'No supporting logs found'));
+    } else {
+      content.push(el('p', { class: 'log-evidence__meta' },
+        'Relevance is calculated from shared terms and timing. These events provide investigation leads.',
+      ));
+      const sourceNumbers = new Map((assessment.source_reports ?? []).map(
+        (source, index) => [source.id, index + 1],
+      ));
+      content.push(el('ol', { class: 'log-evidence__list' },
+        evidence.matches.map((entry, index) =>
+          el('li', { class: 'log-evidence__entry' },
+            el('h4', {}, `Log ${index + 1}`),
+            el('dl', { class: 'log-evidence__details' },
+              el('dt', {}, 'Timestamp'), el('dd', {}, formatDate(entry.timestamp)),
+              el('dt', {}, 'Service'), el('dd', {}, entry.service),
+              el('dt', {}, 'Level'), el('dd', {}, entry.level),
+              el('dt', {}, 'Error code'), el('dd', {}, entry.error_code || 'None supplied'),
+              el('dt', {}, 'Log relevance score'),
+              el('dd', {}, similarityLabel(entry.relevance_score) ?? 'Unavailable'),
+              el('dt', {}, 'Reasoning'), el('dd', {}, entry.reasoning),
+              el('dt', {}, 'Related source reports'),
+              el('dd', {}, (entry.report_ids ?? []).map((id) =>
+                sourceNumbers.has(id) ? `Report ${sourceNumbers.get(id)}` : 'Source report unavailable',
+              ).join(', ')),
+            ),
+            el('pre', { class: 'log-evidence__message' }, entry.message),
+          ),
+        ),
+      ));
+    }
+  }
+
+  return el('details', { class: 'log-evidence' },
+    el('summary', {}, 'Supporting logs (mock CloudWatch)'),
+    ...content,
+  );
+}
+
+function consolidatedReport(issue, forms) {
+  const minimumReports = ['bug', 'awkward'].includes(issue.category) ? 1 : 2;
+  if (issue.report_count < minimumReports) return null;
+
+  const assessment = issue.consolidated_report;
+  const content = assessment?.content;
+  const status = el('p', { class: 'status', role: 'status', 'aria-live': 'polite' });
+  const generate = el('button', {
+    class: 'button button--quiet',
+    type: 'button',
+  }, content ? 'Refresh final report' : 'Generate final report');
+
+  generate.addEventListener('click', async () => {
+    generate.disabled = true;
+    status.textContent = 'Combining the reports...';
+    status.className = 'status';
+    try {
+      const result = await api(
+        `/api/issues/${encodeURIComponent(issue.id)}/consolidated-report`,
+        { method: 'POST' },
+      );
+      if (result.status === 'unavailable') {
+        throw new Error(result.message);
+      }
+      await load();
+    } catch (error) {
+      status.textContent = error.message || 'Could not refresh the final report.';
+      status.className = 'status status--error';
+      generate.disabled = false;
+    }
+  });
+
+  const sections = [];
+
+  if (content) {
+    sections.push(
+      el('h3', { class: 'consolidated-report__title' }, content.title),
+      el('p', { class: 'consolidated-report__meta' },
+        `Combined from ${plural(assessment.report_count, 'report')}. Updated ${formatDate(assessment.generated_at)}.`,
+      ),
+      el('p', { class: 'consolidated-report__meta' },
+        assessment.status === 'ok'
+          ? 'AI-written synthesis. Check it against the source reports.'
+          : 'AI synthesis unavailable. Original supplied details are combined below.',
+      ),
+    );
+
+    if (!consolidatedIsCurrent(assessment, issue)) {
+      sections.push(el('p', { class: 'consolidated-report__warning', role: 'status' },
+        'This version does not include the latest source details. Refresh the final report.',
+      ));
+    }
+
+    sections.push(el('p', { class: 'consolidated-report__summary' }, content.summary));
+
+    const fields = [
+      ['expected_behaviour', 'Expected behaviour'],
+      ['actual_behaviour', 'Actual behaviour'],
+      ['steps_to_reproduce', 'Reported steps to reproduce'],
+      ['affected_pages', 'Affected pages or screens'],
+      ['browsers_devices', 'Browsers and devices'],
+      ['impact', 'Reported impact'],
+      ['conflicts', 'Conflicts or potentially different problems'],
+      ['missing_information', 'Missing information'],
+    ];
+
+    for (const [key, label] of fields) {
+      const values = content[key] ?? [];
+      sections.push(el('section', { class: 'consolidated-report__section' },
+        el('h4', {}, label),
+        values.length
+          ? el('ul', {}, values.map((value) => el('li', {}, value)))
+          : el('p', { class: 'consolidated-report__meta' },
+              key === 'conflicts' ? 'None identified in this synthesis.' : 'No details listed in this synthesis.',
+            ),
+      ));
+    }
+
+    sections.push(logEvidence(assessment, issue));
+
+    sections.push(el('details', { class: 'consolidated-report__sources' },
+      el('summary', {}, 'Source reports used for this version'),
+      (assessment.source_reports ?? []).map((source, index) =>
+        el('section', { class: 'consolidated-report__source' },
+          el('h4', {}, `Report ${index + 1}`),
+          source.occurred_at
+            ? el('p', { class: 'issue__meta' }, `Reported occurrence: ${formatDate(source.occurred_at)}`)
+            : null,
+          reportAnswers(source, source.category ?? issue.category, forms),
+          followUpDetails(source),
+        ),
+      ),
+    ));
+  } else {
+    sections.push(el('p', {},
+      'Generate a detailed report combining the submitted answers and follow-ups for this issue.',
+    ));
+  }
+
+  return el('details', { class: 'consolidated-report' },
+    el('summary', {}, 'Final detailed report'),
+    ...sections,
+    el('div', { class: 'consolidated-report__actions' }, generate, status),
   );
 }
 
@@ -306,6 +501,8 @@ function issueCard(issue, forms, lookup) {
     el('p', { class: 'issue__meta' },
       `${plural(issue.report_count, 'report')}. First reported ${formatDate(issue.created_at)}.`,
     ),
+    logEvidence(issue.consolidated_report, issue),
+    consolidatedReport(issue, forms),
     el('details', {},
       el('summary', {}, 'See what was reported'),
       answersList(issue, forms, lookup),

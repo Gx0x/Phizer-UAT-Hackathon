@@ -39,7 +39,7 @@ def provider_details() -> tuple[str, str]:
     return provider, model
 
 
-def call_llm(system: str, user: str) -> str:
+def call_llm(system: str, user: str, max_output_tokens: int = 1000) -> str:
     """Only provider-specific function. Raises on any provider error."""
     provider, model = provider_details()
 
@@ -62,7 +62,7 @@ def call_llm(system: str, user: str) -> str:
                 config=types.GenerateContentConfig(
                     system_instruction=system,
                     response_mime_type="application/json",
-                    max_output_tokens=1000,
+                    max_output_tokens=max_output_tokens,
                     temperature=0.2,
                     http_options=types.HttpOptions(
                         timeout=int(config.LLM_TIMEOUT_SECONDS * 1000)
@@ -106,7 +106,7 @@ def call_llm(system: str, user: str) -> str:
 
         response = client.messages.create(
             model=model,
-            max_tokens=1000,
+            max_tokens=max_output_tokens,
             system=system,
             messages=[{"role": "user", "content": user}],
         )
@@ -251,3 +251,5 @@ def check_report_quality(
             return unavailable(reason)
 
     return unavailable("provider_error")
+
+

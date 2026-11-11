@@ -1,0 +1,282 @@
+[
+  {
+    "timestamp": "2026-11-11T12:45:00+00:00",
+    "level": "INFO",
+    "service": "Gateway",
+    "message": "Health check completed",
+    "error_code": null
+  },
+  {
+    "timestamp": "2026-11-11T12:45:45+00:00",
+    "level": "INFO",
+    "service": "ExportService",
+    "message": "Export worker ready",
+    "error_code": null
+  },
+  {
+    "timestamp": "2026-11-11T12:46:30+00:00",
+    "level": "ERROR",
+    "service": "AuthService",
+    "message": "401 on /api/login: token expired",
+    "error_code": "AUTH_TOKEN_EXPIRED"
+  },
+  {
+    "timestamp": "2026-11-11T12:47:15+00:00",
+    "level": "INFO",
+    "service": "Metrics",
+    "message": "Latency sample published",
+    "error_code": null
+  },
+  {
+    "timestamp": "2026-11-11T12:48:00+00:00",
+    "level": "WARN",
+    "service": "CacheService",
+    "message": "Cache entry expired for product catalogue",
+    "error_code": "CACHE_EXPIRED"
+  },
+  {
+    "timestamp": "2026-11-11T12:48:45+00:00",
+    "level": "INFO",
+    "service": "AuthService",
+    "message": "Login completed successfully",
+    "error_code": null
+  },
+  {
+    "timestamp": "2026-11-11T12:49:30+00:00",
+    "level": "ERROR",
+    "service": "InvoiceRenderer",
+    "message": "Null reference in InvoiceRenderer while rendering invoice PDF",
+    "error_code": "INVOICE_NULL_REFERENCE"
+  },
+  {
+    "timestamp": "2026-11-11T12:50:15+00:00",
+    "level": "INFO",
+    "service": "Scheduler",
+    "message": "Background cleanup completed",
+    "error_code": null
+  },
+  {
+    "timestamp": "2026-11-11T12:51:00+00:00",
+    "level": "WARN",
+    "service": "EmailService",
+    "message": "Delivery retry scheduled for welcome message",
+    "error_code": "EMAIL_RETRY"
+  },
+  {
+    "timestamp": "2026-11-11T12:51:45+00:00",
+    "level": "INFO",
+    "service": "Gateway",
+    "message": "GET /api/settings returned 200",
+    "error_code": null
+  },
+  {
+    "timestamp": "2026-11-11T12:52:30+00:00",
+    "level": "ERROR",
+    "service": "ExportService",
+    "message": "ExportService timeout after 30s while preparing report download",
+    "error_code": "EXPORT_TIMEOUT"
+  },
+  {
+    "timestamp": "2026-11-11T12:53:15+00:00",
+    "level": "WARN",
+    "service": "ExportService",
+    "message": "Export job stalled: spinner remains active while download waits",
+    "error_code": "EXPORT_JOB_STALLED"
+  },
+  {
+    "timestamp": "2026-11-11T12:54:00+00:00",
+    "level": "INFO",
+    "service": "ExportService",
+    "message": "A different export job completed successfully",
+    "error_code": null
+  },
+  {
+    "timestamp": "2026-11-11T12:54:45+00:00",
+    "level": "INFO",
+    "service": "Metrics",
+    "message": "CPU sample collected",
+    "error_code": null
+  },
+  {
+    "timestamp": "2026-11-11T12:55:30+00:00",
+    "level": "ERROR",
+    "service": "SettingsService",
+    "message": "Save request rejected: settings validation failed",
+    "error_code": "SETTINGS_SAVE_REJECTED"
+  },
+  {
+    "timestamp": "2026-11-11T12:56:15+00:00",
+    "level": "INFO",
+    "service": "Gateway",
+    "message": "GET /api/invoices returned 200",
+    "error_code": null
+  },
+  {
+    "timestamp": "2026-11-11T12:57:00+00:00",
+    "level": "ERROR",
+    "service": "DetailService",
+    "message": "Mobile detail section input rejected: edit control is read-only",
+    "error_code": "DETAIL_INPUT_READONLY"
+  },
+  {
+    "timestamp": "2026-11-11T12:57:45+00:00",
+    "level": "WARN",
+    "service": "DetailService",
+    "message": "Edit event ignored for details input on mobile",
+    "error_code": "DETAIL_EDIT_IGNORED"
+  },
+  {
+    "timestamp": "2026-11-11T12:58:30+00:00",
+    "level": "INFO",
+    "service": "AuthService",
+    "message": "Session heartbeat received",
+    "error_code": null
+  },
+  {
+    "timestamp": "2026-11-11T12:59:15+00:00",
+    "level": "INFO",
+    "service": "CacheService",
+    "message": "Cache warmed successfully",
+    "error_code": null
+  },
+  {
+    "timestamp": "2026-11-11T13:00:00+00:00",
+    "level": "ERROR",
+    "service": "AuthService",
+    "message": "Login failed: invalid password on /api/login",
+    "error_code": "AUTH_INVALID_PASSWORD"
+  },
+  {
+    "timestamp": "2026-11-11T13:00:45+00:00",
+    "level": "INFO",
+    "service": "Scheduler",
+    "message": "Daily statistics task started",
+    "error_code": null
+  },
+  {
+    "timestamp": "2026-11-11T13:01:30+00:00",
+    "level": "WARN",
+    "service": "InvoiceRenderer",
+    "message": "Invoice render request retried after null reference",
+    "error_code": "INVOICE_RENDER_RETRY"
+  },
+  {
+    "timestamp": "2026-11-11T13:02:15+00:00",
+    "level": "INFO",
+    "service": "Gateway",
+    "message": "GET /api/reports returned 200",
+    "error_code": null
+  },
+  {
+    "timestamp": "2026-11-11T13:03:00+00:00",
+    "level": "ERROR",
+    "service": "ExportService",
+    "message": "Exported dates use month/day/year despite day/month/year selection",
+    "error_code": "EXPORT_DATE_FORMAT"
+  },
+  {
+    "timestamp": "2026-11-11T13:03:45+00:00",
+    "level": "INFO",
+    "service": "AuditService",
+    "message": "Configuration read event recorded",
+    "error_code": null
+  },
+  {
+    "timestamp": "2026-11-11T13:04:30+00:00",
+    "level": "WARN",
+    "service": "StorageService",
+    "message": "Storage upload retry after connection reset",
+    "error_code": "UPLOAD_RETRY"
+  },
+  {
+    "timestamp": "2026-11-11T13:05:15+00:00",
+    "level": "INFO",
+    "service": "Metrics",
+    "message": "Memory sample collected",
+    "error_code": null
+  },
+  {
+    "timestamp": "2026-11-11T13:06:00+00:00",
+    "level": "ERROR",
+    "service": "SettingsService",
+    "message": "Save endpoint failed with database write timeout",
+    "error_code": "SETTINGS_SAVE_TIMEOUT"
+  },
+  {
+    "timestamp": "2026-11-11T13:06:45+00:00",
+    "level": "INFO",
+    "service": "Gateway",
+    "message": "GET / returned 200",
+    "error_code": null
+  },
+  {
+    "timestamp": "2026-11-11T13:07:30+00:00",
+    "level": "WARN",
+    "service": "ExportService",
+    "message": "Export worker queue delayed: file preparation still pending",
+    "error_code": "EXPORT_QUEUE_DELAY"
+  },
+  {
+    "timestamp": "2026-11-11T13:08:15+00:00",
+    "level": "INFO",
+    "service": "EmailService",
+    "message": "Notification delivered",
+    "error_code": null
+  },
+  {
+    "timestamp": "2026-11-11T13:09:00+00:00",
+    "level": "ERROR",
+    "service": "InvoiceRenderer",
+    "message": "Invoice render failed for missing customer address",
+    "error_code": "INVOICE_ADDRESS_MISSING"
+  },
+  {
+    "timestamp": "2026-11-11T13:09:45+00:00",
+    "level": "INFO",
+    "service": "Scheduler",
+    "message": "Background cleanup started",
+    "error_code": null
+  },
+  {
+    "timestamp": "2026-11-11T13:10:30+00:00",
+    "level": "WARN",
+    "service": "AuthService",
+    "message": "Login token validation failed for expired session",
+    "error_code": "AUTH_SESSION_EXPIRED"
+  },
+  {
+    "timestamp": "2026-11-11T13:11:15+00:00",
+    "level": "INFO",
+    "service": "Gateway",
+    "message": "GET /api/profile returned 200",
+    "error_code": null
+  },
+  {
+    "timestamp": "2026-11-11T13:12:00+00:00",
+    "level": "INFO",
+    "service": "DetailService",
+    "message": "Detail section loaded successfully",
+    "error_code": null
+  },
+  {
+    "timestamp": "2026-11-11T13:12:45+00:00",
+    "level": "WARN",
+    "service": "Monitoring",
+    "message": "Disk utilisation above warning threshold",
+    "error_code": "DISK_USAGE_HIGH"
+  },
+  {
+    "timestamp": "2026-11-11T13:13:30+00:00",
+    "level": "INFO",
+    "service": "Metrics",
+    "message": "Request counter flushed",
+    "error_code": null
+  },
+  {
+    "timestamp": "2026-11-11T13:14:15+00:00",
+    "level": "INFO",
+    "service": "Gateway",
+    "message": "Health check completed",
+    "error_code": null
+  }
+]
