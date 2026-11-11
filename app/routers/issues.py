@@ -26,7 +26,9 @@ def list_issues():
             .table("issues")
             .select(
                 "*, reports(id, category, answers, created_at, occurred_at, follow_up_question, "
-                "follow_up_answer, ai_quality, duplicate_check, "
+                "follow_up_answer, ai_quality, duplicate_check, detail_revision, "
+                "detail_requests!detail_requests_report_id_fkey("
+                "id, question, answer, status, suggestion_status, created_at, sent_at, answered_at), "
                 "duplicate_matches!duplicate_matches_report_id_fkey("
                 "id, confidence, reasoning, manager_decision, matched_issue_id))"
             )

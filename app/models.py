@@ -48,3 +48,12 @@ class FollowUpAnswer(BaseModel):
     answer: str
 
 
+
+
+class DetailRequestSend(BaseModel):
+    question: str = Field(min_length=1, max_length=2000)
+
+
+class DetailRequestAnswer(BaseModel):
+    answer: str = Field(min_length=1)
+    tester_id: UUID

@@ -62,6 +62,9 @@ def _windows(reports: list[dict], minutes: int) -> list[dict]:
         text = "\n".join(str(value) for value in (report.get("answers") or {}).values())
         if report.get("follow_up_answer"):
             text += "\n" + report["follow_up_answer"]
+        for reply in report.get("manager_clarifications") or []:
+            if reply.get("answer"):
+                text += "\n" + reply["answer"]
         result.append({
             "report_id": str(report["id"]),
             "at": at,

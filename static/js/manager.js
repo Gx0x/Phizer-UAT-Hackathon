@@ -260,8 +260,144 @@ function hasPendingPossible(issue) {
   );
 }
 
+function activeDetailRequest(report) {
+  return (report.detail_requests ?? []).find((request) =>
+    request.status === 'draft' || request.status === 'pending',
+  );
+}
+
+function managerClarifications(report) {
+  const replies = report.manager_clarifications ??
+    (report.detail_requests ?? []).filter((request) => request.status === 'answered');
+  if (!replies.length) return null;
+
+  return el('section', { class: 'manager-clarifications' },
+    el('h3', {}, 'Manager requests and replies'),
+    replies.map((reply) => el('div', { class: 'manager-clarifications__reply' },
+      el('dl', { class: 'answers' },
+        el('dt', {}, 'Question'), el('dd', {}, reply.question),
+        el('dt', {}, 'Tester answer'), el('dd', {}, reply.answer),
+      ),
+      reply.answered_at
+        ? el('p', { class: 'issue__meta' }, `Answered ${formatDate(reply.answered_at)}`)
+        : null,
+    )),
+  );
+}
+
+function requestDetailAction(report) {
+  const status = el('p', { class: 'status', role: 'status', 'aria-live': 'polite' });
+  const mark = el('button', { class: 'button button--quiet', type: 'button' },
+    'Request more detail',
+  );
+  mark.addEventListener('click', async () => {
+    mark.disabled = true;
+    status.className = 'status';
+    status.textContent = 'Preparing a question...';
+    try {
+      await api(`/api/reports/${encodeURIComponent(report.id)}/detail-request`, { method: 'POST' });
+      await load();
+    } catch (error) {
+      status.textContent = error.message || 'Could not move this report.';
+      status.className = 'status status--error';
+      mark.disabled = false;
+    }
+  });
+  return el('div', { class: 'detail-request-actions' }, mark, status);
+}
+
+function detailRequestCard(issue, report, request, forms) {
+  const draft = request.status === 'draft';
+  const status = el('p', { class: 'status', role: 'status', 'aria-live': 'polite' });
+  const cancel = el('button', { class: 'button button--quiet', type: 'button' },
+    'Return to review queue',
+  );
+  const send = draft
+    ? el('button', { class: 'button', type: 'submit' }, 'Send to tester')
+    : null;
+  const question = draft
+    ? el('textarea', { id: `manager-question-${request.id}`, rows: 4, maxlength: 2000 })
+    : null;
+  if (question) question.value = request.question ?? '';
+
+  function setPending(value) {
+    cancel.disabled = value;
+    if (send) send.disabled = value;
+    if (question) question.disabled = value;
+  }
+
+  async function perform(action, body) {
+    setPending(true);
+    status.className = 'status';
+    status.textContent = action === 'send' ? 'Sending your question...' : 'Returning the report...';
+    try {
+      await api(`/api/detail-requests/${encodeURIComponent(request.id)}/${action}`, {
+        method: 'POST',
+        ...(body ? { body: JSON.stringify(body) } : {}),
+      });
+      await load();
+    } catch (error) {
+      status.className = 'status status--error';
+      status.textContent = error.message || 'Could not update this request.';
+      setPending(false);
+    }
+  }
+
+  cancel.addEventListener('click', () => perform('cancel'));
+  const controls = draft
+    ? el('form', { class: 'detail-request-form', novalidate: true },
+        el('label', { for: `manager-question-${request.id}` },
+          request.suggestion_status === 'ok'
+            ? 'AI-suggested question. Edit before sending.'
+            : 'Suggested question. AI unavailable, please review and edit.',
+        ),
+        question,
+        el('div', { class: 'detail-request-actions' }, send, cancel),
+        status,
+      )
+    : el('div', {},
+        el('h4', {}, 'Question sent to tester'),
+        el('p', { class: 'detail-request-question' }, request.question),
+        el('p', { class: 'issue__meta' }, 'Awaiting tester response.'),
+        request.sent_at
+          ? el('p', { class: 'issue__meta' }, `Sent ${formatDate(request.sent_at)}`)
+          : null,
+        cancel,
+        status,
+      );
+
+  if (draft) {
+    controls.addEventListener('submit', (event) => {
+      event.preventDefault();
+      if (send.disabled) return;
+      const text = question.value.trim();
+      if (!text) {
+        status.textContent = 'Write a question before sending.';
+        status.className = 'status status--error';
+        question.focus();
+        return;
+      }
+      return perform('send', { question: text });
+    });
+  }
+
+  return el('li', { class: `detail-request-card issue--${issue.category}` },
+    el('p', { class: 'issue__meta' }, `${forms[issue.category]?.label ?? issue.category} report`),
+    el('h3', {}, issue.title),
+    el('p', { class: 'issue__meta' }, `Submitted ${formatDate(report.created_at)}`),
+    el('details', {},
+      el('summary', {}, 'Read this report'),
+      reportAnswers(report, issue.category, forms),
+      followUpDetails(report),
+      managerClarifications(report),
+      qualityAssessment(report),
+    ),
+    controls,
+  );
+}
+
 function answersList(issue, forms, lookup) {
-  const reports = issue.reports ?? [];
+  const reports = (issue.reports ?? []).filter((report) => !activeDetailRequest(report));
 
   if (!reports.length) {
     return el('p', { class: 'issue__meta' },
@@ -285,6 +421,8 @@ function answersList(issue, forms, lookup) {
         duplicateAssessment(report, issue, forms, lookup),
         followUpDetails(report),
         qualityAssessment(report),
+        managerClarifications(report),
+        requestDetailAction(report),
       ),
     ),
   );
@@ -304,7 +442,11 @@ function consolidatedIsCurrent(assessment, issue) {
       (report.follow_up_question ?? null) === (source.follow_up_question ?? null) &&
       (report.follow_up_answer ?? null) === (source.follow_up_answer ?? null) &&
       (report.occurred_at ?? null) === (source.occurred_at ?? null) &&
-      (report.created_at ?? null) === (source.created_at ?? null);
+      (report.created_at ?? null) === (source.created_at ?? null) &&
+      (report.detail_revision ?? 0) === (source.detail_revision ?? 0) &&
+      JSON.stringify((report.detail_requests ?? []).filter((item) => item.status === 'answered')
+        .sort((a, b) => a.id.localeCompare(b.id)).map(({ id, question, answer, answered_at }) =>
+          ({ id, question, answer, answered_at }))) === JSON.stringify(source.manager_clarifications ?? []);
   });
 }
 
@@ -466,6 +608,7 @@ function consolidatedReport(issue, forms) {
             : null,
           reportAnswers(source, source.category ?? issue.category, forms),
           followUpDetails(source),
+          managerClarifications(source),
         ),
       ),
     ));
@@ -484,6 +627,7 @@ function consolidatedReport(issue, forms) {
 
 function issueCard(issue, forms, lookup) {
   const category = issue.category;
+  const pendingCount = (issue.reports ?? []).filter(activeDetailRequest).length;
 
   return el('li', { class: `issue issue--${category}` },
     el('div', { class: 'issue__top' },
@@ -501,6 +645,9 @@ function issueCard(issue, forms, lookup) {
     el('p', { class: 'issue__meta' },
       `${plural(issue.report_count, 'report')}. First reported ${formatDate(issue.created_at)}.`,
     ),
+    pendingCount
+      ? el('p', { class: 'issue__meta' }, `${plural(pendingCount, 'report')} awaiting more detail.`)
+      : null,
     logEvidence(issue.consolidated_report, issue),
     consolidatedReport(issue, forms),
     el('details', {},
@@ -549,38 +696,50 @@ async function load() {
     }
   }
 
+  const needsDetail = [];
+  const reviewIssues = issues.filter((issue) => {
+    for (const report of issue.reports ?? []) {
+      const request = activeDetailRequest(report);
+      if (request) needsDetail.push({ issue, report, request });
+    }
+    return !(issue.reports ?? []).length ||
+      issue.reports.some((report) => !activeDetailRequest(report));
+  });
+  needsDetail.sort((a, b) => new Date(b.request.created_at) - new Date(a.request.created_at));
+
   const heading = el('div', { class: 'toolbar' },
     el('div', {},
       el('h1', {}, 'Review queue'),
       el('p', { class: 'issue__meta' },
-        plural(issues.length, 'issue') + ', most-noticed first',
+        `${plural(issues.length, 'issue')} total, ${plural(needsDetail.length, 'report')} needing more detail`,
       ),
     ),
     el('button', {
-      class: 'button button--quiet',
-      type: 'button',
-      onclick: load,
+      class: 'button button--quiet', type: 'button', onclick: load,
     }, 'Refresh'),
   );
 
-  if (!issues.length) {
-    root.replaceChildren(
-      heading,
-      el('p', {},
-        'Nothing to review yet. Reports from testers will appear here.',
-      ),
-      el('a', {
-        class: 'button',
-        href: '/',
-      }, 'Add a test report'),
-    );
-    return;
-  }
-
   root.replaceChildren(
     heading,
-    el('ul', { class: 'queue' },
-      issues.map((issue) => issueCard(issue, forms, lookup)),
+    el('div', { class: 'manager-board' },
+      el('section', { class: 'manager-board__column', 'aria-labelledby': 'review-column-heading' },
+        el('h2', { id: 'review-column-heading' }, 'Ready for review'),
+        reviewIssues.length
+          ? el('ul', { class: 'queue' }, reviewIssues.map((issue) => issueCard(issue, forms, lookup)))
+          : el('p', {}, issues.length
+              ? 'All submitted reports are currently awaiting more detail.'
+              : 'Nothing to review yet. Reports from testers will appear here.'),
+        !issues.length ? el('a', { class: 'button', href: '/' }, 'Add a test report') : null,
+      ),
+      el('section', { class: 'manager-board__column manager-board__column--detail',
+        'aria-labelledby': 'detail-column-heading' },
+        el('h2', { id: 'detail-column-heading' }, 'Needs more detail'),
+        el('p', { class: 'issue__meta' }, 'Reports appear here only when you request more detail.'),
+        needsDetail.length
+          ? el('ul', { class: 'detail-request-list' }, needsDetail.map(({ issue, report, request }) =>
+              detailRequestCard(issue, report, request, forms)))
+          : el('p', {}, 'No reports need more detail.'),
+      ),
     ),
   );
 }

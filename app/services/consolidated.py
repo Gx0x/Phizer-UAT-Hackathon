@@ -8,6 +8,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from app.form_config import FORMS
 from app.services.ai import call_llm, provider_details
 from app.services.logs import find_supporting_logs
+from app.services.detail_requests import answered_clarifications
 
 log = logging.getLogger("uat.consolidated")
 
@@ -18,7 +19,9 @@ impact, cause, workaround, reproduction step, or agreement between testers.
 Combine repeated facts, retain distinct useful details, and preserve uncertainty.
 A similarity match can be wrong. Explicitly list incompatible symptoms, contexts,
 or potentially different problems under conflicts. Do not force them into one story.
-Use answered follow-up questions when identifying missing information.
+Use answered follow-up questions and manager_clarifications when identifying missing information.
+Each manager_clarifications entry is an answered question appended after submission.
+Treat these answers as supplied facts, with the same weight as the original answers.
 Mock log matches are investigation leads selected by keyword and time relevance.
 They do not prove the cause or establish that a tester encountered a specific log event.
 Distinguish tester observations from log observations. Reference supplied log numbers
@@ -55,7 +58,10 @@ class FinalReport(BaseModel):
     missing_information: list[str]
 
 
-SOURCE_FIELDS = "id, category, answers, created_at, occurred_at, follow_up_question, follow_up_answer"
+SOURCE_FIELDS = (
+    "id, category, answers, created_at, occurred_at, follow_up_question, follow_up_answer, "
+    "detail_revision, detail_requests(id, question, answer, status, answered_at)"
+)
 
 
 def source_snapshot(rows: list[dict]) -> list[dict]:
@@ -69,6 +75,8 @@ def source_snapshot(rows: list[dict]) -> list[dict]:
             "answers": dict(row.get("answers") or {}),
             "follow_up_question": row.get("follow_up_question"),
             "follow_up_answer": row.get("follow_up_answer"),
+            "detail_revision": row.get("detail_revision", 0),
+            "manager_clarifications": answered_clarifications(row.get("detail_requests") or []),
         }
         for row in sorted(rows, key=lambda row: str(row["id"]))
     ]
