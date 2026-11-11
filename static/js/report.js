@@ -1,4 +1,3 @@
-
 import { api, getProfiles } from './api.js';
 import { el } from './dom.js';
 import { initHeader } from './header.js';
@@ -152,6 +151,15 @@ function showFollowUp(result) {
 
 function showConfirmation(result) {
   const followUp = showFollowUp(result);
+  const duplicate = result.duplicate;
+  const count = duplicate?.others_noticed;
+  const duplicateNotice = duplicate?.outcome === 'likely' &&
+    Number.isInteger(count) && count >= 1
+    ? el('p', { class: 'duplicate-notice' },
+        `This issue already has ${count} other ${count === 1 ? 'report' : 'reports'}. ` +
+        "It's already on your manager's radar.",
+      )
+    : null;
 
   root.replaceChildren(
     el('section', {
@@ -165,6 +173,7 @@ function showConfirmation(result) {
         el('strong', {}, result.status),
         '. Your manager will take a look soon.',
       ),
+      duplicateNotice,
       followUp,
       el('div', { class: 'actions' },
         el('a', {

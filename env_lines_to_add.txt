@@ -1,0 +1,9 @@
+# --- Slice 5: embeddings and duplicate thresholds ---
+EMBEDDING_PROVIDER=local
+EMBEDDING_MODEL=BAAI/bge-small-en-v1.5
+EMBEDDING_DIM=384
+# Leave blank to use fastembed's default cache (your system temp folder, NOT OneDrive)
+EMBEDDING_CACHE_DIR=
+# Placeholders. Replace with the values the calibration script suggests.
+DUP_POSSIBLE_THRESHOLD=0.70
+DUP_LIKELY_THRESHOLD=0.85

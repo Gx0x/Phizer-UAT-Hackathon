@@ -22,7 +22,12 @@ def list_issues():
         result = (
             get_supabase()
             .table("issues")
-            .select("*, reports(id, answers, created_at, follow_up_question, follow_up_answer, ai_quality)")
+            .select(
+                "*, reports(id, answers, created_at, follow_up_question, "
+                "follow_up_answer, ai_quality, duplicate_check, "
+                "duplicate_matches!duplicate_matches_report_id_fkey("
+                "id, confidence, reasoning, manager_decision, matched_issue_id))"
+            )
             .order("report_count", desc=True)
             .order("created_at", desc=True)
             .execute()
@@ -31,3 +36,5 @@ def list_issues():
         log.exception("Could not load issues")
         raise HTTPException(status_code=502, detail="We couldn't load the issues just now.")
     return result.data
+
+

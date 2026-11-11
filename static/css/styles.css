@@ -426,3 +426,96 @@ h2 { font-size: 1.15rem; margin: 0; }
     margin-bottom: 0.75rem;
   }
 }
+
+/* Slice 5: duplicate messages and manager comparisons */
+.duplicate-notice {
+  padding: 0.85rem 1rem;
+  border-left: 4px solid var(--suggestion);
+  border-radius: var(--radius);
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.chip--possible-duplicate {
+  border: 1px solid var(--brand);
+  background: var(--paper);
+  color: var(--brand);
+}
+
+.duplicate-check {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.duplicate-check__heading {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+}
+
+.duplicate-check__verdict {
+  margin: 0 0 0.75rem;
+  font-weight: 600;
+}
+
+.duplicate-check__pending {
+  margin: 0.75rem 0;
+  color: var(--muted);
+}
+
+.duplicate-check__details {
+  display: grid;
+  grid-template-columns: minmax(8rem, 14rem) minmax(0, 1fr);
+  gap: 0.5rem 1rem;
+  margin: 0.75rem 0;
+}
+
+.duplicate-check__details dt {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.duplicate-check__details dd {
+  min-width: 0;
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.duplicate-comparison {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.duplicate-comparison__report {
+  min-width: 0;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--paper);
+}
+
+.duplicate-comparison__report h4 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+@media (max-width: 600px) {
+  .duplicate-check {
+    padding: 0.85rem;
+  }
+
+  .duplicate-comparison,
+  .duplicate-check__details {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .duplicate-check__details dd {
+    margin-bottom: 0.5rem;
+  }
+}

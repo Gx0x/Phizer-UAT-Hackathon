@@ -7,6 +7,7 @@ from app.db import get_supabase
 from app.form_config import FORMS
 from app.models import FollowUpAnswer, ReportCreate
 from app.services.ai import check_report_quality, unavailable
+from app.services.duplicates import PlacementError, handle_new_report
 
 router = APIRouter(prefix="/api", tags=["reports"])
 log = logging.getLogger("uat.reports")
@@ -22,54 +23,24 @@ def make_title(category: str, answers: dict[str, str]) -> str:
 
 @router.post("/reports", status_code=201)
 def create_report(payload: ReportCreate):
-    """Save a report and create its issue.
-
-    Slice 3 has no AI and no duplicate detection, so every report becomes its
-    own issue with report_count = 1. Slice 5 will group similar reports.
-    """
+    """Save a report, group likely duplicates and run the optional quality check."""
     db = get_supabase()
     tester_id = str(payload.tester_id) if payload.tester_id else DEMO_TESTER_ID
 
     try:
-        issue = (
-            db.table("issues")
-            .insert(
-                {
-                    "title": make_title(payload.category, payload.answers),
-                    "category": payload.category,
-                    "status": "new",
-                    "report_count": 1,
-                }
-            )
-            .execute()
-            .data[0]
+        placement = handle_new_report(
+            db,
+            category=payload.category,
+            title=make_title(payload.category, payload.answers),
+            tester_id=tester_id,
+            answers=payload.answers,
         )
-    except Exception:
-        log.exception("Could not create issue")
-        raise HTTPException(status_code=502, detail="We couldn't save that just now. Please try again.")
-
-    try:
-        report = (
-            db.table("reports")
-            .insert(
-                {
-                    "issue_id": issue["id"],
-                    "tester_id": tester_id,
-                    "category": payload.category,
-                    "answers": payload.answers,
-                }
-            )
-            .execute()
-            .data[0]
-        )
-    except Exception:
-        log.exception("Could not create report")
-        # Tidy up so we never leave an issue with no report behind it.
-        try:
-            db.table("issues").delete().eq("id", issue["id"]).execute()
-        except Exception:
-            log.exception("Could not remove the orphaned issue %s", issue["id"])
-        raise HTTPException(status_code=502, detail="We couldn't save that just now. Please try again.")
+    except PlacementError as exc:
+        log.warning("Could not save report: stage=%s", exc.stage)
+        raise HTTPException(
+            status_code=502,
+            detail="We couldn't save that just now. Please try again.",
+        ) from exc
 
     # From here onward, AI failures cannot undo or block the saved report.
     try:
@@ -92,18 +63,19 @@ def create_report(payload: ReportCreate):
         db.table("reports").update({
             "follow_up_question": follow_up,
             "ai_quality": assessment,
-        }).eq("id", report["id"]).execute()
+        }).eq("id", placement.report_id).execute()
     except Exception:
-        log.exception("Could not store AI assessment for report %s", report["id"])
+        log.exception("Could not store AI assessment for report %s", placement.report_id)
         # Do not offer a question if it could not be stored.
         follow_up = None
 
     return {
-        "report_id": report["id"],
-        "issue_id": issue["id"],
+        "report_id": placement.report_id,
+        "issue_id": placement.issue_id,
         "status": "Received",
         "message": "Thanks, we've got your report.",
         "follow_up": follow_up,
+        "duplicate": placement.public_summary(),
     }
 
 
@@ -135,3 +107,5 @@ def save_follow_up(report_id: str, payload: FollowUpAnswer):
         log.exception("Could not save follow-up")
         raise HTTPException(status_code=502, detail="We couldn't save your answer just now. Please try again.")
     return {"status": "saved", "message": "Thanks, that helps."}
+
+
