@@ -3,6 +3,4 @@ uvicorn[standard]
 supabase
 python-dotenv
 google-genai
-# Optional, only for LLM_PROVIDER=anthropic: anthropic
-
 fastembed
