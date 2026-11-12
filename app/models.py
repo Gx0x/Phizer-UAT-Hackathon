@@ -88,3 +88,22 @@ class TechnicalDraftUpdate(BaseModel):
 class DeveloperStatusUpdate(BaseModel):
     expected_revision: int = Field(ge=1)
     status: Literal["todo", "in_progress", "ready_for_retest"]
+
+
+class TesterFeedbackSend(BaseModel):
+    action: Literal["send_update", "completed", "not_forwarded", "reopen"]
+    message: str = Field(min_length=1, max_length=3000)
+    reason: str = Field(default="", max_length=2000)
+    checked_fix: bool = False
+
+    @model_validator(mode="after")
+    def clean_feedback(self):
+        self.message = self.message.strip()
+        self.reason = self.reason.strip()
+        if not self.message:
+            raise ValueError("Write a message for the tester.")
+        if self.action == "completed" and not self.checked_fix:
+            raise ValueError("Confirm that you have checked the fix before completing this issue.")
+        if self.action == "not_forwarded" and not self.reason:
+            raise ValueError("Explain why this report is not being taken forward.")
+        return self

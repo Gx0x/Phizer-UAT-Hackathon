@@ -1,0 +1,46 @@
+/* Tester feedback loop. Append after the existing feature styles. */
+main.tester-home {
+  max-width: 1380px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(290px, 350px);
+  gap: 2rem;
+  align-items: start;
+}
+.tester-home__main { min-width: 0; }
+.tester-home .picker { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.tester-updates {
+  min-width: 0;
+  position: sticky;
+  top: 1.5rem;
+  padding: 1.25rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  max-height: calc(100vh - 3rem);
+  overflow-y: auto;
+  overflow-wrap: anywhere;
+}
+.tester-updates__heading { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; }
+.tester-updates h2 { font-size: 1.25rem; margin: 0; }
+.tester-updates .button { font-size: 0.9rem; }
+.tester-updates__list { list-style: none; padding: 0; display: grid; gap: 1rem; }
+.tester-update-card { padding: 1rem; border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); }
+.tester-update-card h3 { font-size: 1rem; margin: 0.75rem 0; }
+.tester-update-message { white-space: pre-wrap; }
+.tester-update-status { display: inline-block; font-weight: 700; color: var(--brand); }
+.tester-update-status--completed { color: #116747; }
+.tester-update-status--not_forwarded { color: var(--ink); }
+.tester-feedback-panel { margin-top: 1rem; padding: 1rem; border: 1px solid var(--line); border-radius: var(--radius); }
+.tester-feedback-panel > button { margin-top: 1rem; }
+.tester-feedback-form { margin-top: 1rem; }
+.tester-feedback-form textarea,
+.tester-feedback-form select { width: 100%; padding: 0.65rem; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); font: inherit; }
+.tester-feedback-confirmation { display: block; margin: 1rem 0; }
+.tester-feedback-confirmation[hidden] { display: none; }
+@media (max-width: 950px) {
+  main.tester-home { grid-template-columns: minmax(0, 1fr); }
+  .tester-updates { position: static; max-height: none; }
+}
+@media (max-width: 520px) {
+  .tester-home .picker { grid-template-columns: minmax(0, 1fr); }
+}

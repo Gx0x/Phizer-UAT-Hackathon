@@ -4,9 +4,9 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from app.routers import detail_requests, handoff, issues, meta, reports
+from app.routers import detail_requests, handoff, issues, meta, reports, tester_updates
 
-app = FastAPI(title="UAT, Untangled")
+app = FastAPI(title="UAT Clarif-AI")
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 STATIC_DIR = PROJECT_ROOT / "static"
@@ -17,6 +17,7 @@ app.include_router(reports.router)
 app.include_router(issues.router)
 app.include_router(detail_requests.router)
 app.include_router(handoff.router)
+app.include_router(tester_updates.router)
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 

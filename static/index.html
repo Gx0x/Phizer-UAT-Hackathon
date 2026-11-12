@@ -3,22 +3,23 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>UAT, Untangled</title>
+    <title>UAT Clarif-AI</title>
     <link rel="stylesheet" href="/static/css/styles.css" />
   </head>
   <body>
     <a class="skip-link" href="#main">Skip to content</a>
     <header class="site-header" id="site-header"></header>
 
-    <main id="main">
+    <main id="main" class="tester-home">
+      <div class="tester-home__main">
       <h1>What did you spot?</h1>
-      <p class="lead">Pick the option closest to what you noticed. We'll ask a few questions, and none of them are exam questions.</p>
+      <p class="lead">Pick the option closest to what you noticed. We'll ask a few questions.</p>
 
       <ul class="picker">
         <li>
           <a class="panel panel--bug" href="/static/report.html?category=bug">
             <span class="panel__name">Bug</span>
-            <p class="panel__desc">Something is broken or doesn't work as it should.</p>
+            <p class="panel__desc">Something is broken.</p>
           </a>
         </li>
         <li>
@@ -43,7 +44,10 @@
       <section id="tester-detail-requests" class="tester-detail-requests" aria-label="Requests for more detail">
         <p role="status">Loading requests for more detail...</p>
       </section>
-
+      </div>
+      <aside id="tester-report-updates" class="tester-updates" aria-label="Updates on your reports">
+        <p role="status">Loading your updates...</p>
+      </aside>
     </main>
 
     <script type="module" src="/static/js/index.js"></script>

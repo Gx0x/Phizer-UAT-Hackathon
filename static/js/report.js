@@ -342,7 +342,7 @@ function renderForm(form) {
     }
   });
 
-  document.title = `${form.title} - UAT, Untangled`;
+  document.title = `${form.title} - UAT Clarif-AI`;
 
   root.replaceChildren(
     el('h1', {}, form.title),

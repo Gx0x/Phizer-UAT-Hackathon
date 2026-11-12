@@ -40,7 +40,7 @@ export function initHeader() {
   }, label);
   host.replaceChildren(
     el('div', { class: 'site-header__inner' },
-      el('a', { class: 'brand', href: '/' }, 'UAT, Untangled'),
+      el('a', { class: 'brand', href: '/' }, 'UAT Clarif-AI'),
       el('div', { class: 'role-switch' },
         el('span', { id: 'role-label' }, 'Viewing as'),
         el('div', { class: 'role-switch__group', role: 'group', 'aria-labelledby': 'role-label' },

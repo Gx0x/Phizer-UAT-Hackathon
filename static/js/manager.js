@@ -2,6 +2,7 @@ import { api } from './api.js';
 import { el } from './dom.js';
 import { getRole, initHeader, setRole } from './header.js';
 import { TECHNICAL_FIELDS, technicalLog } from './technical.js';
+import { testerFeedbackPanel } from './tester-updates.js';
 
 initHeader();
 
@@ -790,6 +791,7 @@ function handoffPanel(issue, forms) {
 }
 
 function issueCard(issue, forms, lookup) {
+  const isClosed = issue.tester_resolution && issue.tester_resolution !== 'open';
   const category = issue.category;
   const pendingCount = (issue.reports ?? []).filter(activeDetailRequest).length;
 
@@ -798,7 +800,7 @@ function issueCard(issue, forms, lookup) {
       el('span', { class: `chip chip--${category}` },
         forms[category]?.label ?? category,
       ),
-      el('span', { class: 'chip chip--status' }, issue.handoff_status === 'forwarded' ? 'Forwarded' : issue.status),
+      el('span', { class: 'chip chip--status' }, isClosed ? (issue.tester_resolution === 'completed' ? 'Completed' : 'Not taking forward') : (issue.handoff_status === 'forwarded' ? 'Forwarded' : issue.status)),
       hasPendingPossible(issue)
         ? el('span', { class: 'chip chip--possible-duplicate' },
             'Possible duplicate: needs a decision',
@@ -814,10 +816,11 @@ function issueCard(issue, forms, lookup) {
       : null,
     logEvidence(issue.consolidated_report, issue),
     consolidatedReport(issue, forms),
-    handoffPanel(issue, forms),
+    isClosed ? null : handoffPanel(issue, forms),
+    testerFeedbackPanel(issue, load),
     el('details', {},
       el('summary', {}, 'See what was reported'),
-      answersList(issue, forms, lookup, issue.handoff_status !== 'forwarded'),
+      answersList(issue, forms, lookup, !isClosed && issue.handoff_status !== 'forwarded'),
     ),
   );
 }
@@ -861,8 +864,10 @@ async function load() {
     }
   }
 
-  const forwardedIssues = issues.filter((issue) => issue.handoff_status === 'forwarded');
-  const reviewItems = issues.filter((issue) => issue.handoff_status !== 'forwarded');
+  const closedIssues = issues.filter((issue) => issue.tester_resolution && issue.tester_resolution !== 'open');
+  const openIssues = issues.filter((issue) => !closedIssues.includes(issue));
+  const forwardedIssues = openIssues.filter((issue) => issue.handoff_status === 'forwarded');
+  const reviewItems = openIssues.filter((issue) => issue.handoff_status !== 'forwarded');
   const needsDetail = [];
   const reviewIssues = reviewItems.filter((issue) => {
     for (const report of issue.reports ?? []) {
@@ -876,9 +881,9 @@ async function load() {
 
   const heading = el('div', { class: 'toolbar' },
     el('div', {},
-      el('h1', {}, managerView === 'forwarded' ? 'Forwarded issues' : 'Review queue'),
+      el('h1', {}, managerView === 'closed' ? 'Closed issues' : (managerView === 'forwarded' ? 'Forwarded issues' : 'Review queue')),
       el('p', { class: 'issue__meta' },
-        `${plural(reviewItems.length, 'issue')} in review, ${plural(forwardedIssues.length, 'issue')} forwarded, ${plural(needsDetail.length, 'report')} needing more detail`,
+        `${plural(reviewItems.length, 'issue')} in review, ${plural(forwardedIssues.length, 'issue')} forwarded, ${plural(closedIssues.length, 'issue')} closed, ${plural(needsDetail.length, 'report')} needing more detail`,
       ),
     ),
     el('button', {
@@ -887,10 +892,16 @@ async function load() {
   );
 
   const views = el('div', { class: 'manager-views', role: 'group', 'aria-label': 'Manager queue views' },
-    ...[['review', 'Review'], ['forwarded', 'Forwarded']].map(([value, label]) =>
+    ...[['review', 'Review'], ['forwarded', 'Forwarded'], ['closed', 'Closed']].map(([value, label]) =>
       el('button', { class: 'button button--quiet', type: 'button',
         'aria-pressed': String(managerView === value), onclick: () => { managerView = value; return load(); } }, label)),
   );
+  if (managerView === 'closed') {
+    root.replaceChildren(heading, views, closedIssues.length
+      ? el('ul', { class: 'queue' }, closedIssues.map((issue) => issueCard(issue, forms, lookup)))
+      : el('p', {}, 'No completed issues or reports not being taken forward yet.'));
+    return;
+  }
   if (managerView === 'forwarded') {
     root.replaceChildren(heading, views,
       forwardedIssues.length
