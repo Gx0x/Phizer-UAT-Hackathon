@@ -150,6 +150,19 @@ def synthesise(title: str, category: str, sources: list[dict], llm=None, log_evi
     }
 
 
+def load_source_reports(db, issue_id: str) -> list[dict]:
+    rows = []
+    offset = 0
+    while True:
+        page = db.table("reports").select(SOURCE_FIELDS).eq("issue_id", issue_id).order(
+            "id"
+        ).range(offset, offset + 499).execute().data or []
+        rows.extend(page)
+        if len(page) < 500:
+            return rows
+        offset += 500
+
+
 def refresh_consolidated_report(db, issue_id: str, llm=None, *, allow_single: bool = False) -> dict | None:
     """Never prevent a submission or follow-up from saving.
 
@@ -160,17 +173,7 @@ def refresh_consolidated_report(db, issue_id: str, llm=None, *, allow_single: bo
         issues = db.table("issues").select("id, title, category, consolidated_report").eq("id", issue_id).execute().data
         if not issues:
             return None
-        # Page through all reports so a summary cannot silently omit a response page.
-        rows = []
-        offset = 0
-        while True:
-            page = db.table("reports").select(SOURCE_FIELDS).eq("issue_id", issue_id).order(
-                "id"
-            ).range(offset, offset + 499).execute().data or []
-            rows.extend(page)
-            if len(page) < 500:
-                break
-            offset += 500
+        rows = load_source_reports(db, issue_id)
         issue = issues[0]
         if not rows or (len(rows) < 2 and not allow_single and not issue.get("consolidated_report")):
             return None

@@ -31,6 +31,9 @@ def mark_needs_detail(report_id: UUID):
         report = get_report(db, str(report_id))
         if report is None:
             raise HTTPException(status_code=404, detail="This report could not be found.")
+        issues = db.table("issues").select("handoff_status").eq("id", report["issue_id"]).limit(1).execute().data
+        if issues and issues[0].get("handoff_status") == "forwarded":
+            raise HTTPException(status_code=409, detail="Reopen this issue before requesting more detail.")
         history = get_history(db, str(report_id))
         active = next((item for item in history if item["status"] in ("draft", "pending")), None)
         if active:

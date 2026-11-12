@@ -1,10 +1,12 @@
 import { api } from './api.js';
 import { el } from './dom.js';
 import { getRole, initHeader, setRole } from './header.js';
+import { TECHNICAL_FIELDS, technicalLog } from './technical.js';
 
 initHeader();
 
 const root = document.getElementById('manager-root');
+let managerView = 'review';
 
 function showGate() {
   root.replaceChildren(
@@ -396,7 +398,7 @@ function detailRequestCard(issue, report, request, forms) {
   );
 }
 
-function answersList(issue, forms, lookup) {
+function answersList(issue, forms, lookup, allowRequests = true) {
   const reports = (issue.reports ?? []).filter((report) => !activeDetailRequest(report));
 
   if (!reports.length) {
@@ -422,7 +424,7 @@ function answersList(issue, forms, lookup) {
         followUpDetails(report),
         qualityAssessment(report),
         managerClarifications(report),
-        requestDetailAction(report),
+        allowRequests ? requestDetailAction(report) : null,
       ),
     ),
   );
@@ -625,6 +627,168 @@ function consolidatedReport(issue, forms) {
   );
 }
 
+function handoffPanel(issue, forms) {
+  const status = el('p', { class: 'status', role: 'status', 'aria-live': 'polite' });
+
+  if (issue.handoff_status === 'forwarded') {
+    const reopen = el('button', { class: 'button button--quiet', type: 'button' }, 'Reopen for manager review');
+    reopen.addEventListener('click', async () => {
+      reopen.disabled = true;
+      status.textContent = 'Returning the issue to manager review...';
+      try {
+        await api(`/api/issues/${encodeURIComponent(issue.id)}/reopen-handoff`, { method: 'POST' });
+        managerView = 'review';
+        await load();
+      } catch (error) {
+        status.textContent = error.message || 'Could not reopen the issue.';
+        status.className = 'status status--error';
+        reopen.disabled = false;
+      }
+    });
+    return el('section', { class: 'technical-handover' },
+      el('h3', {}, 'Forwarded to development'),
+      el('p', {}, `Approved ${formatDate(issue.forwarded_at)}.`),
+      reopen, status,
+    );
+  }
+
+  const body = el('div', { class: 'technical-editor-host' });
+  const generate = el('button', { class: 'button button--quiet', type: 'button' }, 'Prepare technical draft');
+  let state = null;
+  let busy = false;
+  let editorShown = false;
+
+  function renderEditor() {
+    const draft = state.draft;
+    const controls = {};
+    const logChecks = [];
+    const candidates = draft.source_snapshot.log_candidates ?? [];
+    const save = el('button', { class: 'button button--quiet', type: 'button' }, 'Save draft');
+    const approve = el('button', { class: 'button', type: 'submit' }, 'Approve and forward');
+    const canApprove = state.source_is_current && !state.open_detail_requests;
+    approve.disabled = !canApprove;
+    const fields = TECHNICAL_FIELDS.map(([key, label]) => {
+      const id = `technical-${issue.id}-${key}`;
+      const control = key === 'title'
+        ? el('input', { id, name: key, type: 'text', maxlength: 300 })
+        : el('textarea', { id, name: key, rows: key === 'problem_summary' ? 5 : 3 });
+      control.value = draft.content[key] ?? '';
+      controls[key] = control;
+      return el('div', { class: 'field' }, el('label', { for: id }, label), control);
+    });
+    const priority = el('select', { id: `technical-${issue.id}-priority` },
+      ['low', 'medium', 'high', 'critical'].map((value) => el('option', { value }, value)),
+    );
+    priority.value = draft.content.priority;
+    const logs = candidates.map((entry) => {
+      const check = el('input', { type: 'checkbox', value: entry.id });
+      check.checked = draft.content.included_log_ids.includes(entry.id);
+      logChecks.push(check);
+      return el('label', { class: 'technical-log-choice' },
+        el('span', {}, check, ' Include this event'), technicalLog(entry),
+      );
+    });
+    const form = el('form', { class: 'technical-editor', novalidate: true },
+      draft.generation_status === 'fallback'
+        ? el('p', { class: 'technical-warning' }, 'AI drafting unavailable. Review and edit the assembled draft.')
+        : el('p', {}, 'AI-prepared draft. Review the wording, suggested priority and selected evidence before approval.'),
+      !state.source_is_current
+        ? el('p', { class: 'technical-warning' }, 'Reports have changed. Regenerate from the latest reports before approving.')
+        : null,
+      state.open_detail_requests
+        ? el('p', { class: 'technical-warning' }, 'Answer or cancel open requests for more detail before forwarding.')
+        : null,
+      ...fields,
+      el('div', { class: 'field' }, el('label', { for: `technical-${issue.id}-priority` }, 'Priority'), priority),
+      el('fieldset', { class: 'technical-log-selection' },
+        el('legend', {}, 'Choose supporting log events'),
+        el('p', {}, 'Include relevant evidence. Log matches are investigation leads.'),
+        logs.length ? logs : el('p', {}, 'No candidate log events were found.'),
+      ),
+      el('details', {},
+        el('summary', {}, 'Source reports used for this draft'),
+        draft.source_snapshot.reports.map((source, index) =>
+          el('section', { class: 'technical-source' },
+            el('h4', {}, `Report ${index + 1}`),
+            reportAnswers(source, source.category ?? issue.category, forms),
+            followUpDetails(source), managerClarifications(source),
+          )),
+      ),
+      el('div', { class: 'technical-editor__actions' }, save, approve),
+    );
+
+    async function act(action) {
+      if (busy || (action === 'approve' && !canApprove)) return;
+      const content = Object.fromEntries(Object.entries(controls).map(([key, control]) => [key, control.value]));
+      if (!content.title.trim() || !content.problem_summary.trim()) {
+        status.textContent = 'Add a title and problem summary before forwarding.';
+        status.className = 'status status--error';
+        return;
+      }
+      content.priority = priority.value;
+      content.included_log_ids = logChecks.filter((check) => check.checked).map((check) => check.value);
+      busy = true;
+      save.disabled = true;
+      approve.disabled = true;
+      generate.disabled = true;
+      status.textContent = action === 'approve' ? 'Saving your approval and forwarding this issue...' : 'Saving draft...';
+      status.className = 'status';
+      try {
+        const result = await api(`/api/issues/${encodeURIComponent(issue.id)}/${action === 'approve' ? 'approve-handoff' : 'technical-draft'}`, {
+          method: action === 'approve' ? 'POST' : 'PUT',
+          body: JSON.stringify({ expected_revision: state.draft.revision, content }),
+        });
+        if (action === 'approve') {
+          managerView = 'forwarded';
+          await load();
+        } else {
+          state.draft = result.draft;
+          status.textContent = 'Draft saved.';
+        }
+      } catch (error) {
+        status.textContent = error.message || 'Could not save the handover.';
+        status.className = 'status status--error';
+      } finally {
+        busy = false;
+        save.disabled = false;
+        approve.disabled = !canApprove;
+        generate.disabled = false;
+      }
+    }
+    save.addEventListener('click', () => act('save'));
+    form.addEventListener('submit', (event) => { event.preventDefault(); return act('approve'); });
+    body.replaceChildren(form);
+    editorShown = true;
+  }
+
+  generate.addEventListener('click', async () => {
+    if (busy) return;
+    busy = true;
+    generate.disabled = true;
+    status.textContent = 'Preparing an editable technical draft...';
+    status.className = 'status';
+    try {
+      if (!state) state = await api(`/api/issues/${encodeURIComponent(issue.id)}/technical-draft`);
+      if (!state.draft || editorShown) {
+        state = await api(`/api/issues/${encodeURIComponent(issue.id)}/technical-draft`, { method: 'POST' });
+      }
+      renderEditor();
+      generate.textContent = 'Regenerate from latest reports';
+      status.textContent = '';
+    } catch (error) {
+      status.textContent = error.message || 'Could not prepare the draft.';
+      status.className = 'status status--error';
+    } finally {
+      busy = false;
+      generate.disabled = false;
+    }
+  });
+
+  return el('details', { class: 'technical-handover' },
+    el('summary', {}, 'Technical developer handover'), generate, body, status,
+  );
+}
+
 function issueCard(issue, forms, lookup) {
   const category = issue.category;
   const pendingCount = (issue.reports ?? []).filter(activeDetailRequest).length;
@@ -634,7 +798,7 @@ function issueCard(issue, forms, lookup) {
       el('span', { class: `chip chip--${category}` },
         forms[category]?.label ?? category,
       ),
-      el('span', { class: 'chip chip--status' }, issue.status),
+      el('span', { class: 'chip chip--status' }, issue.handoff_status === 'forwarded' ? 'Forwarded' : issue.status),
       hasPendingPossible(issue)
         ? el('span', { class: 'chip chip--possible-duplicate' },
             'Possible duplicate: needs a decision',
@@ -650,9 +814,10 @@ function issueCard(issue, forms, lookup) {
       : null,
     logEvidence(issue.consolidated_report, issue),
     consolidatedReport(issue, forms),
+    handoffPanel(issue, forms),
     el('details', {},
       el('summary', {}, 'See what was reported'),
-      answersList(issue, forms, lookup),
+      answersList(issue, forms, lookup, issue.handoff_status !== 'forwarded'),
     ),
   );
 }
@@ -696,8 +861,10 @@ async function load() {
     }
   }
 
+  const forwardedIssues = issues.filter((issue) => issue.handoff_status === 'forwarded');
+  const reviewItems = issues.filter((issue) => issue.handoff_status !== 'forwarded');
   const needsDetail = [];
-  const reviewIssues = issues.filter((issue) => {
+  const reviewIssues = reviewItems.filter((issue) => {
     for (const report of issue.reports ?? []) {
       const request = activeDetailRequest(report);
       if (request) needsDetail.push({ issue, report, request });
@@ -709,9 +876,9 @@ async function load() {
 
   const heading = el('div', { class: 'toolbar' },
     el('div', {},
-      el('h1', {}, 'Review queue'),
+      el('h1', {}, managerView === 'forwarded' ? 'Forwarded issues' : 'Review queue'),
       el('p', { class: 'issue__meta' },
-        `${plural(issues.length, 'issue')} total, ${plural(needsDetail.length, 'report')} needing more detail`,
+        `${plural(reviewItems.length, 'issue')} in review, ${plural(forwardedIssues.length, 'issue')} forwarded, ${plural(needsDetail.length, 'report')} needing more detail`,
       ),
     ),
     el('button', {
@@ -719,8 +886,23 @@ async function load() {
     }, 'Refresh'),
   );
 
+  const views = el('div', { class: 'manager-views', role: 'group', 'aria-label': 'Manager queue views' },
+    ...[['review', 'Review'], ['forwarded', 'Forwarded']].map(([value, label]) =>
+      el('button', { class: 'button button--quiet', type: 'button',
+        'aria-pressed': String(managerView === value), onclick: () => { managerView = value; return load(); } }, label)),
+  );
+  if (managerView === 'forwarded') {
+    root.replaceChildren(heading, views,
+      forwardedIssues.length
+        ? el('ul', { class: 'queue' }, forwardedIssues.map((issue) => issueCard(issue, forms, lookup)))
+        : el('p', {}, 'No issues have been forwarded to development.'),
+    );
+    return;
+  }
+
   root.replaceChildren(
     heading,
+    views,
     el('div', { class: 'manager-board' },
       el('section', { class: 'manager-board__column', 'aria-labelledby': 'review-column-heading' },
         el('h2', { id: 'review-column-heading' }, 'Ready for review'),

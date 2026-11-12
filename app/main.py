@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from app.routers import detail_requests, issues, meta, reports
+from app.routers import detail_requests, handoff, issues, meta, reports
 
 app = FastAPI(title="UAT, Untangled")
 
@@ -16,6 +16,7 @@ app.include_router(meta.router)
 app.include_router(reports.router)
 app.include_router(issues.router)
 app.include_router(detail_requests.router)
+app.include_router(handoff.router)
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 

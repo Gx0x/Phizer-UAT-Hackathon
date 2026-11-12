@@ -737,3 +737,60 @@ h2 { font-size: 1.15rem; margin: 0; }
 @media (max-width: 1000px) {
   .manager-board { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* Reviewed technical handover and developer queue */
+.role-switch { flex-wrap: wrap; }
+.role-switch__group button { padding-inline: 0.75rem; }
+.manager-views { display: flex; gap: 0.75rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+.manager-views button[aria-pressed="true"] { background: var(--brand); color: var(--brand-ink); }
+.technical-handover {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--brand);
+  border-radius: var(--radius);
+  background: var(--surface);
+  overflow-wrap: anywhere;
+}
+.technical-handover > button { margin-top: 1rem; }
+.technical-editor { margin-top: 1rem; }
+.technical-editor input[type="text"],
+.technical-editor textarea,
+.technical-editor select,
+.developer-status-form select {
+  width: 100%;
+  padding: 0.65rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+}
+.technical-editor textarea { resize: vertical; }
+.technical-editor__actions { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1rem; }
+.technical-warning { padding: 0.75rem; border-left: 4px solid var(--danger); background: var(--paper); }
+.technical-log-selection { min-width: 0; border: 1px solid var(--line); margin: 1rem 0; }
+.technical-log-selection legend { font-weight: 600; }
+.technical-log-choice { display: block; margin: 0.75rem 0; cursor: pointer; }
+.technical-log-choice input { margin-right: 0.4rem; }
+.technical-log,
+.technical-source { min-width: 0; padding: 0.75rem; border: 1px solid var(--line); border-radius: var(--radius); margin-top: 0.5rem; }
+.technical-log pre { white-space: pre-wrap; overflow-wrap: anywhere; margin-bottom: 0; font-size: 0.9rem; }
+.developer-ticket-list,
+.report-progress-list { list-style: none; padding: 0; display: grid; gap: 1rem; }
+.developer-ticket,
+.report-progress-card { padding: 1.25rem; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow-wrap: anywhere; }
+.developer-ticket h2 { overflow-wrap: anywhere; }
+.developer-ticket summary { cursor: pointer; font-weight: 600; color: var(--brand); }
+.developer-status-form { display: flex; align-items: center; flex-wrap: wrap; gap: 0.75rem; margin: 1rem 0; }
+.developer-status-form select { width: auto; max-width: 100%; }
+.developer-status-form .status { flex-basis: 100%; margin: 0; }
+.technical-content h3 { font-size: 1rem; margin-top: 1.25rem; }
+.technical-content__text { white-space: pre-wrap; }
+.tester-report-progress { margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid var(--line); }
+.report-progress-card h3 { margin: 0 0 0.5rem; font-size: 1rem; }
+.report-progress-status { font-weight: 600; color: var(--brand); }
+@media (max-width: 600px) {
+  .technical-handover,
+  .developer-ticket,
+  .report-progress-card { padding: 0.85rem; }
+}

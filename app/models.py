@@ -57,3 +57,34 @@ class DetailRequestSend(BaseModel):
 class DetailRequestAnswer(BaseModel):
     answer: str = Field(min_length=1)
     tester_id: UUID
+
+
+class TechnicalContent(BaseModel):
+    title: str = Field(min_length=1, max_length=300)
+    problem_summary: str = Field(min_length=1)
+    expected_behaviour: str = ""
+    actual_behaviour: str = ""
+    reproduction_steps: str = ""
+    environment: str = ""
+    log_notes: str = ""
+    priority: Literal["low", "medium", "high", "critical"] = "medium"
+    included_log_ids: list[str] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def clean_technical_content(self):
+        self.title = self.title.strip()
+        self.problem_summary = self.problem_summary.strip()
+        if not self.title or not self.problem_summary:
+            raise ValueError("Add a title and problem summary before forwarding.")
+        self.included_log_ids = list(dict.fromkeys(self.included_log_ids))
+        return self
+
+
+class TechnicalDraftUpdate(BaseModel):
+    expected_revision: int = Field(ge=1)
+    content: TechnicalContent
+
+
+class DeveloperStatusUpdate(BaseModel):
+    expected_revision: int = Field(ge=1)
+    status: Literal["todo", "in_progress", "ready_for_retest"]
